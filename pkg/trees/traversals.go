@@ -4,7 +4,7 @@ type Traversal int
 
 const (
 	// Type of traversal where each node is visited before its children.
-	PreOrder = iota
+	PreOrder Traversal = iota
 	// Type of traversal where each node is visited after its children.
 	PostOrder
 )
@@ -25,6 +25,13 @@ func (node *Node) postTraverse(f func(*Node)) {
 	f(node)
 }
 
+/*
+Apply the provided function f to the nodes of the sub-tree descendant from the current node, in the specified traversal order.
+
+# Parameters
+  - f: A function of signature func(*Node)
+  - traversal: Type of traversal order (PreOrder or PostOrder)
+*/
 func (node *Node) Traverse(f func(*Node), traversal Traversal) {
 	switch traversal {
 	case PreOrder:
@@ -50,6 +57,13 @@ func (branch *Branch) postTraverse(f func(*Branch)) {
 	f(branch)
 }
 
+/*
+Apply the provided function f to the branches of the sub-tree descendant from the current branch, in the specified traversal order
+
+# Parameters
+  - f: A function of signature func(*Branch)
+  - traversal: Type of traversal order (PreOrder or PostOrder)
+*/
 func (branch *Branch) Traverse(f func(*Branch), traversal Traversal) {
 	switch traversal {
 	case PreOrder:
@@ -59,16 +73,33 @@ func (branch *Branch) Traverse(f func(*Branch), traversal Traversal) {
 	}
 }
 
+/*
+Apply the provided function f to the nodes of the tree in the specified traversal order
+
+# Parameters
+  - f: A function of signature func(*Node)
+  - traversal: Type of traversal order (PreOrder or PostOrder)
+*/
 func (tree *Tree) TraverseNodes(f func(*Node), traversal Traversal) {
 	tree.Root.Traverse(f, traversal)
 }
 
+/*
+Apply the provided function f to the branches of the tree in the specified traversal order
+
+# Parameters
+  - f: A function of signature func(*Branch)
+  - traversal: Type of traversal order (PreOrder or PostOrder)
+*/
 func (tree *Tree) TraverseBranches(f func(*Branch), traversal Traversal) {
 	for _, branch := range tree.Root.Out {
 		branch.Traverse(f, traversal)
 	}
 }
 
+/*
+Return the number of nodes that descend from the current node
+*/
 func (node *Node) NbDescendants() int {
 	nb := 0
 	count := func(*Node) {
@@ -80,10 +111,16 @@ func (node *Node) NbDescendants() int {
 	return nb
 }
 
+/*
+Return the number of nodes in the tree
+*/
 func (tree *Tree) NbNodes() int {
 	return tree.Root.NbDescendants()
 }
 
+/*
+Return the number of branches in the tree
+*/
 func (tree *Tree) NbBranches() int {
 	return tree.NbNodes() - 1
 }
