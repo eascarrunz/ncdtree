@@ -1,4 +1,4 @@
-package trees
+package phylocore
 
 import (
 	"errors"
@@ -53,4 +53,19 @@ func (taxset *TaxonSet) GetId(s string) int {
 // Return the length of a taxon set
 func (taxset *TaxonSet) Len() int {
 	return len(taxset.Names)
+}
+
+func (taxset *TaxonSet) MakeUnassembledTree() *Tree {
+	nbOuter := taxset.Len()
+	// nbNode := 2*nbOuter - 1
+	tree := MakeUnassembledTree(nbOuter + 1)
+
+	for i := range nbOuter {
+		tree.Nodes[i].TaxonId = i
+		tree.Nodes[i].Label = taxset.GetName(i)
+	}
+
+	tree.Root = tree.Nodes[nbOuter]
+
+	return tree
 }

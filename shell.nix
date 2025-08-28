@@ -9,6 +9,7 @@ in
 pkgs.mkShell {
   buildInputs = [
     goEnv
+    pkgs.brotli
     pkgs.vscode
   ] ++ vscodeExtensions;
 

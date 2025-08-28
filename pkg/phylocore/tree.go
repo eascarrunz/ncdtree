@@ -1,4 +1,4 @@
-package trees
+package phylocore
 
 import (
 	"fmt"
@@ -141,6 +141,8 @@ func (tree *Tree) NewNode() *Node {
 
 /*
 Link up a parent node to a child node via a given branch.
+
+The brunch must not be currently attached to either node.
 */
 func (parent *Node) AddChild(child *Node, branch *Branch) {
 	branch.Parent = parent
@@ -182,4 +184,14 @@ Sever the connections between a branch and its parent and child nodes.
 func (branch *Branch) Separate() {
 	branch.SeparateChild()
 	branch.SeparateParent()
+}
+
+func (branch *Branch) JoinParent(node *Node) {
+	branch.Parent = node
+	node.Out = append(node.Out, branch)
+}
+
+func (branch *Branch) JoinChild(node *Node) {
+	branch.Child = node
+	node.In = branch
 }

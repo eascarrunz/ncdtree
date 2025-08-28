@@ -1,4 +1,4 @@
-package trees
+package phylocore
 
 /*
 Create a tree that is as balanced as possible for a given number of outer nodes.
@@ -8,9 +8,9 @@ Node IDs are assigned in PHYLIP order.
 # Parameters
   - nbOuter: The number of outer nodes for the tree
 */
-func MakeBalancedTree(nbOuter int) *Tree {
-	tree := MakeUnassembledTree(2*nbOuter - 1)
-	tree.Root = tree.Nodes[nbOuter]
+func MakeBalancedTree(taxa *TaxonSet) *Tree {
+	tree := taxa.MakeUnassembledTree()
+	nbOuter := taxa.Len()
 	bifurcate(tree, tree.Root, nbOuter, nbOuter+1, 0)
 
 	return tree
@@ -46,7 +46,7 @@ func bifurcate(tree *Tree, node *Node, nbOuter int, nextIdInner int, nextIdOuter
 	rightChildNode := tree.Nodes[id]
 	node.AddChild(rightChildNode, tree.NewBranch())
 
-	if nbOuterLeft > 1 {
+	if nbOuterRight > 1 {
 		nextIdInner, nextIdOuter = bifurcate(tree, rightChildNode, nbOuterRight, nextIdInner, nextIdOuter)
 	}
 
@@ -61,11 +61,10 @@ Node IDs are assigned in PHYLIP order.
 # Parameters
   - nbOuter: The number of outer nodes for the tree
 */
-func MakeStarTree(nbOuter int) *Tree {
-	tree := MakeUnassembledTree(2*nbOuter - 1)
-	tree.Root = tree.Nodes[nbOuter]
+func MakeStarTree(taxa *TaxonSet) *Tree {
+	tree := taxa.MakeUnassembledTree()
 
-	for i := range nbOuter {
+	for i := range taxa.Len() {
 		outerNode := tree.Nodes[i]
 		tree.Root.AddChild(outerNode, tree.NewBranch())
 	}

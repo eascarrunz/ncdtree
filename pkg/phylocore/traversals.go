@@ -1,4 +1,4 @@
-package trees
+package phylocore
 
 type Traversal int
 
