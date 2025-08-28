@@ -12,7 +12,7 @@ This is a demo of phylogenetic inference without alignment using the normalized 
 Cilibrasi & Vitányi (2005) defined the normalized compression distance ($NCD_Z$) of strings $x$ and $y$ with a compressor $Z$ as:
 
 $$
-{NCD}_Z(x, y) = \dfrac{C_Z(xy) - min\{C_Z(x), C_Z(y)\}}{max\{C_Z(x), C_Z(y)\}}
+{NCD}_Z(x, y) = \dfrac{C_Z(xy) - min\{ C_Z(x), C_Z(y) \}}{max\{ C_Z(x), C_Z(y) \}}
 $$
 
 Where $C_Z(\circ)$ is the compressed size of a string with a compressor $Z$, and $xy$ is the concatenation of $x$ and $y$.
