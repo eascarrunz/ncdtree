@@ -1,8 +1,2 @@
-github.com/google/brotli v1.1.0 h1:m2ivzhfXQnwvtI/1l9N/r1EW+I4hOYFwhzJpQKIBgeY=
-github.com/google/brotli v1.1.0/go.mod h1:XpGqLY1HgMKTQI5TU8iAKE/okaKqS9h1e6KRlRztlOU=
 github.com/google/brotli/go/cbrotli v1.1.0 h1:YwHD/rwSgUSL4b2S3ZM2jnNymm+tmwKQqjUIC63nmHU=
 github.com/google/brotli/go/cbrotli v1.1.0/go.mod h1:nOPhAkwVliJdNTkj3gXpljmWhjc4wCaVqbMJcPKWP4s=
-github.com/ulikunitz/xz v0.5.13 h1:ar98gWrjf4H1ev05fYP/o29PDZw9DrI3niHtnEqyuXA=
-github.com/ulikunitz/xz v0.5.13/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
-github.com/ulikunitz/xz v0.5.15 h1:9DNdB5s+SgV3bQ2ApL10xRc35ck0DuIX/isZvIk+ubY=
-github.com/ulikunitz/xz v0.5.15/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=

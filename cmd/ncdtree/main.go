@@ -7,6 +7,7 @@ import (
 	"ncdtree/pkg/ncd"
 	"ncdtree/pkg/phylocore"
 	"os"
+	"slices"
 )
 
 func main() {
@@ -33,22 +34,41 @@ func main() {
 
 	N := len(*taxonNames)
 
-	// ctx := ncd.NewGzipCompressionContext()
-	// ctx := ncd.NewBrotliCompressionContext()
-	fmt.Println("LZMA2 Compressor")
-	ctx := ncd.NewLZMACompressionContext()
+	compressorName := "Brotli"
+
+	fmt.Println("Compressor " + compressorName)
+
+	var ctx *ncd.CompressionContext
+
+	switch compressorName {
+	case "Brotli":
+		ctx = ncd.NewBrotliCompressionContext()
+	case "Gzip":
+		ctx = ncd.NewGzipCompressionContext()
+	}
 
 	cx := ncd.CXVector(seqs, *ctx)
 	cxx := ncd.CXXVector(seqs, *ctx)
-	cratio := make([]float64, N)
+	selfNCD := make([]float64, N)
 
 	for i := range N {
-		cratio[i] = cx[i] / cxx[i]
+		selfNCD[i] = ncd.NCD(cx[i], cx[i], cxx[i])
 	}
 
 	for i, taxonName := range *taxonNames {
-		fmt.Printf("%3d. %-*s\t%d\t%f\t%f\t%f\n", i, 50, taxonName, len((*seqs)[i]), cx[i], cxx[i], cratio[i])
+		fmt.Printf("%3d. %-*s\t%d\t%f\t%f\t%f\n", i, 50, taxonName, len((*seqs)[i]), cx[i], cxx[i], selfNCD[i])
 	}
+
+	slices.Sort(selfNCD) // In-place sorting
+	var selfNCDMedian float64
+
+	if N%2 == 0 {
+		selfNCDMedian = (selfNCD[N/2] + selfNCD[(N/2)+1]) / 2
+	} else {
+		selfNCDMedian = selfNCD[(N+1)/2]
+	}
+
+	fmt.Printf("Median Self NCD: %f\n", selfNCDMedian)
 
 	D := ncd.NCDMatrix(seqs, &cx, ctx)
 	D.Show()
