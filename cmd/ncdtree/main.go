@@ -34,7 +34,9 @@ func main() {
 	N := len(*taxonNames)
 
 	// ctx := ncd.NewGzipCompressionContext()
-	ctx := ncd.NewBrotliCompressionContext()
+	// ctx := ncd.NewBrotliCompressionContext()
+	fmt.Println("LZMA2 Compressor")
+	ctx := ncd.NewLZMACompressionContext()
 
 	cx := ncd.CXVector(seqs, *ctx)
 	cxx := ncd.CXXVector(seqs, *ctx)

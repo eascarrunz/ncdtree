@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/google/brotli/go/cbrotli"
+	"github.com/ulikunitz/xz/lzma"
 )
 
 type genericCompressor interface {
@@ -47,26 +48,26 @@ func NewGzipCompressionContext() *CompressionContext {
 	}
 }
 
-type BrotliWriterReset struct {
+type BrotliWriterReseter struct {
 	w    *cbrotli.Writer
 	opts cbrotli.WriterOptions
 }
 
-func NewBrotliWriterReset(buf io.Writer, opts cbrotli.WriterOptions) *BrotliWriterReset {
+func NewBrotliWriterReset(buf io.Writer, opts cbrotli.WriterOptions) *BrotliWriterReseter {
 	w := cbrotli.NewWriter(buf, opts)
 
-	return &BrotliWriterReset{w, opts}
+	return &BrotliWriterReseter{w, opts}
 }
 
-func (w *BrotliWriterReset) Write(b []byte) (int, error) {
+func (w *BrotliWriterReseter) Write(b []byte) (int, error) {
 	return w.w.Write(b)
 }
 
-func (w *BrotliWriterReset) Close() error {
+func (w *BrotliWriterReseter) Close() error {
 	return w.w.Close()
 }
 
-func (w *BrotliWriterReset) Reset(ww io.Writer) {
+func (w *BrotliWriterReseter) Reset(ww io.Writer) {
 	w.w = cbrotli.NewWriter(ww, w.opts)
 }
 
@@ -77,6 +78,46 @@ func NewBrotliCompressionContext() *CompressionContext {
 		LGWin:   0,
 	}
 	compressor := NewBrotliWriterReset(counter, compressor_options)
+
+	return &CompressionContext{
+		Compressor: compressor,
+		Counter:    counter,
+	}
+}
+
+type LZMA2WriteReseter struct {
+	writer *lzma.Writer2
+}
+
+func NewLZMA2WriteReseter(buf io.Writer) *LZMA2WriteReseter {
+	writer, err := lzma.NewWriter2(buf)
+	if err != nil {
+		panic(err)
+	}
+
+	return &LZMA2WriteReseter{writer}
+}
+
+func (wr LZMA2WriteReseter) Write(b []byte) (int, error) {
+	return wr.writer.Write(b)
+}
+
+func (wr LZMA2WriteReseter) Close() error {
+	return wr.writer.Close()
+}
+
+func (wr LZMA2WriteReseter) Reset(buf io.Writer) {
+	writer, err := lzma.NewWriter2(buf)
+	if err != nil {
+		panic(err)
+	}
+	wr.writer = writer
+}
+
+func NewLZMACompressionContext() *CompressionContext {
+	counter := &ByteCounter{}
+	// compressorOptions := lzma.Writer2Config
+	compressor := NewLZMA2WriteReseter(counter)
 
 	return &CompressionContext{
 		Compressor: compressor,
