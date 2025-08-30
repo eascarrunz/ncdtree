@@ -2,6 +2,7 @@ package ncd
 
 import (
 	"fmt"
+	"io"
 	"iter"
 	"math"
 )
@@ -137,4 +138,41 @@ func (m *TriangularMatrix) Show() {
 		fmt.Printf("%10d\t", j)
 	}
 	fmt.Printf("%10d\n", m.N-2)
+}
+
+func WriteLabelledTriangularMatrix(buf io.Writer, labels *[]string, M *TriangularMatrix, p int) (int, error) {
+	b := 0              // Count of written bytes
+	bb := 0             // Count of written bytes by a single write attempt
+	fieldWidth := p + 2 // Field width for padding
+	var s string
+	if len(*labels) != M.N {
+		return 0, fmt.Errorf("number of labels differs (%d) from the number of rows (%d)", len(*labels), M.N)
+	}
+
+	printWidth := 0
+	for _, s := range *labels {
+		l := len(s)
+		if l > printWidth {
+			printWidth = l
+		}
+	}
+
+	for i := range M.N {
+		s = fmt.Sprintf("%-*s", printWidth, (*labels)[i])
+		bb, _ = fmt.Fprint(buf, s)
+		b += bb
+		for j := range i {
+			if i == j {
+				continue
+			} else {
+				s = fmt.Sprintf(" %-*.*g", fieldWidth, p, M.Get(i, j))
+				bb, _ = fmt.Fprint(buf, s)
+				b += bb
+			}
+		}
+		bb, _ = fmt.Fprintf(buf, "\n")
+		b += bb
+	}
+
+	return b, nil
 }
