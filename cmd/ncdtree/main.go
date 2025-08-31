@@ -105,7 +105,6 @@ func main() {
 		// fmt.Println("\n#\tTaxon\tSize\tCompressedSize\tCompressionRatio\tSelfNCD")
 		// fmt.Println("---------------------------------------------------------------------------------")
 		selfNCD := make([]float64, N)
-		var selfNCDMedian float64
 		for i := range N {
 			selfNCD[i] = ncd.NCD(cx[i], cx[i], cxx[i])
 		}
@@ -131,7 +130,6 @@ func main() {
 		// }
 
 		writeStatsTable(os.Stdout, taxonNames, &seqSize, &cx, &selfNCD)
-		fmt.Printf("Median Self NCD: %f\n", selfNCDMedian)
 	}
 
 	// Create the distance matrix
