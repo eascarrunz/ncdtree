@@ -7,7 +7,6 @@ import (
 	"ncdtree/pkg/ncd"
 	"ncdtree/pkg/phylocore"
 	"os"
-	"slices"
 
 	"github.com/akamensky/argparse"
 )
@@ -21,10 +20,10 @@ func main() {
 	)
 	argInfile := parser.String(
 		"f", "file",
-		&argparse.Options{Required: false, Default: "", Help: "File with sequences in FASTA format"},
+		&argparse.Options{Required: false, Help: "File with sequences in FASTA format (read from stdin if none is given)"},
 	)
 	argAlgo := parser.Selector(
-		"a", "algo",
+		"Z", "compressor",
 		compressorList,
 		&argparse.Options{Required: false, Default: "Brotli", Help: "Compression algorithm"},
 	)
@@ -68,8 +67,6 @@ func main() {
 
 	compressorName := *argAlgo
 
-	fmt.Println("Compressor " + compressorName)
-
 	var ctx *ncd.CompressionContext
 
 	switch compressorName {
@@ -83,23 +80,40 @@ func main() {
 	cxx := ncd.CXXVector(seqs, *ctx)
 
 	if *argStats {
+		fmt.Println("COMPRESSOR")
+		fmt.Println("==========")
+		fmt.Println("Compressor " + compressorName + "\n")
+		fmt.Println("COMPRESSION METRICS")
+		fmt.Println("===================")
+		// fmt.Println("\n#\tTaxon\tSize\tCompressedSize\tCompressionRatio\tSelfNCD")
+		// fmt.Println("---------------------------------------------------------------------------------")
 		selfNCD := make([]float64, N)
 		var selfNCDMedian float64
 		for i := range N {
 			selfNCD[i] = ncd.NCD(cx[i], cx[i], cxx[i])
 		}
 
-		for i, taxonName := range *taxonNames {
-			fmt.Printf("%3d. %-*s\t%d\t%.0f\t%.0f\t%f\n", i, 50, taxonName, len((*seqs)[i]), cx[i], cxx[i], selfNCD[i])
+		seqSize := make([]int, len(*seqs))
+		for i, v := range *seqs {
+			seqSize[i] = len(v)
 		}
+		// var compressionRatio float64
 
-		slices.Sort(selfNCD) // In-place sorting
-		if N%2 == 0 {
-			selfNCDMedian = (selfNCD[N/2] + selfNCD[(N/2)+1]) / 2
-		} else {
-			selfNCDMedian = selfNCD[(N+1)/2]
-		}
+		// for i, taxonName := range *taxonNames {
+		// 	seqSize[i] = len((*seqs)[i])
+		// 	compressionRatio = cx[i] / float64(seqSize[i])
 
+		// 	fmt.Printf("%2d\t%-*s\t%d\t%.0f\t%.2g\t%.2g mit\n", i, 40, taxonName, seqSize[i], cx[i], compressionRatio, selfNCD[i])
+		// }
+
+		// slices.Sort(selfNCD) // In-place sorting
+		// if N%2 == 0 {
+		// 	selfNCDMedian = (selfNCD[N/2] + selfNCD[(N/2)+1]) / 2
+		// } else {
+		// 	selfNCDMedian = selfNCD[(N+1)/2]
+		// }
+
+		writeStatsTable(os.Stdout, taxonNames, &seqSize, &cx, &selfNCD)
 		fmt.Printf("Median Self NCD: %f\n", selfNCDMedian)
 	}
 
@@ -127,4 +141,5 @@ func main() {
 
 		outFileTree.WriteString(tree.NewickString())
 	}
+
 }
