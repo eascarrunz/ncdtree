@@ -64,4 +64,23 @@ There must be no header, and the first column must contain the taxon names. The 
 
 ## Build
 
-Coming soon.
+0. Dependencies:
+
+- Go
+- Brotli
+
+1. Clone
+
+```sh
+git clone https://github.com/eascarrunz/ncdtree.git
+```
+   
+2. Build
+
+```sh
+cd ncdtree
+go build ./cmd/ncdtree
+go build ./cmd/nj
+```
+
+More details soon.
