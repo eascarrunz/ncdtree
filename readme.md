@@ -19,15 +19,32 @@ Where $C_Z(\circ)$ is the compressed size of a string with a compressor $Z$, and
 
 ## Usage
 
-Get a distance matrix and neighbour-joining tree in Newick format printed to `stdout`.
+### NCD matrix and neighbour-joining tree
 
-```sh
-./ncdtree <SEQUENCES>
+Using the program `ncdtree`.
+
+```
+usage: ncdtree [-h|--help] [-f|--file "<value>"] [-Z|--compressor
+               (Brotli|Gzip)] [-s|--stats] [--notree]
+
+               Estimate a phylogeny from DNA sequences using the normalized
+               compression distance (NCD) and neighbour-joining
+
+Arguments:
+
+  -h  --help        Print help information
+  -f  --file        File with sequences in FASTA format (read from stdin if
+                    none is given)
+  -Z  --compressor  Compression algorithm. Default: Brotli
+  -s  --stats       Print statistics
+      --notree      Do not estimate a tree. Only write out distance matrix.
 ```
 
-The \<SEQUENCES\> file must contain nucleotide or amino-acid sequences in Fasta format.
+The matrix is written to a file named ncd_matrix.txt, and the tree is written to a file names tree.nwk.
 
-Get a neighbour joining tree in Newick format printed to `stdout`.
+### Neighbour-joining tree directly from a distance file
+
+Get a neighbour-joining tree in Newick format printed to `stdout`.
 
 ```sh
 ./nj <MATRIX>
