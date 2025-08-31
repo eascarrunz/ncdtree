@@ -46,15 +46,32 @@ func main() {
 	var err error
 	var taxonNames *[]string
 	var seqs *[][]byte
+	var inputStat os.FileInfo
 
 	if len(*argInfile) > 0 {
 		input, err = os.Open(*argInfile)
 		if err != nil {
 			panic(err)
 		}
+		inputStat, err = input.Stat()
+		if err != nil {
+			panic(err)
+		}
+		if inputStat.Size() == 0 {
+			os.Stderr.WriteString("Empty input file.\n")
+			os.Exit(65)
+		}
 		defer input.Close()
 	} else {
 		input = os.Stdin
+		inputStat, err = input.Stat()
+		if err != nil {
+			panic(err)
+		}
+		if inputStat.Mode()&os.ModeNamedPipe == 0 {
+			os.Stderr.WriteString("No input.\n")
+			os.Exit(66)
+		}
 	}
 
 	scanner := bufio.NewScanner(input)
