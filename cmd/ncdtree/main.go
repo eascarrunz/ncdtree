@@ -37,7 +37,7 @@ func main() {
 	// )
 	argNoTree := parser.Flag(
 		"", "notree",
-		&argparse.Options{Required: false, Help: "Do estimate a tree. Only write out distance matrix."},
+		&argparse.Options{Required: false, Help: "Do not estimate a tree. Only write out distance matrix."},
 	)
 
 	parser.Parse(os.Args)
