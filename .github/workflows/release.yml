@@ -1,6 +1,7 @@
 name: Build Release Binaries
 
 on:
+  
   release:
     types: [created]
 
@@ -10,7 +11,7 @@ permissions:
 
 jobs:
   release:
-    name: Multi-target release
+    name: Single-target release
     runs-on: ubuntu-latest
 #    strategy:
 #      matrix:
