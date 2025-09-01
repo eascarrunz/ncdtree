@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Install libbrotli-dev
-        run: sudo apt-get update
+        run: sudo apt-get update && sudo apt-get install -y libbrotli-dev
 
       - name: Build and release
         uses: wangyoucao577/go-release-action@v1.53
