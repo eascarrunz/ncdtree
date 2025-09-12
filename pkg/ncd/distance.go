@@ -8,48 +8,48 @@ func NCD(x float64, y float64, xy float64) float64 {
 	}
 }
 
-func CXVector(seqs *[][]byte, ctx CompressionContext) []float64 {
+func CXVector(seqs *[][]byte, mc ManagedCompressor) []float64 {
 	N := len(*seqs)
 	cx := make([]float64, N)
 
-	ctx.SizeReset()
+	// mc.Process()
 
 	for i, s := range *seqs {
-		ctx.Write(s)
-		cx[i] = float64(ctx.SizeReset())
+		mc.Send(s)
+		cx[i] = float64(mc.Process())
 	}
 
 	return cx
 }
 
-func CXXVector(seqs *[][]byte, ctx CompressionContext) []float64 {
+func CXXVector(seqs *[][]byte, mc ManagedCompressor) []float64 {
 	N := len(*seqs)
 	cxx := make([]float64, N)
 
-	ctx.SizeReset()
+	// mc.Process()
 
 	for i, s := range *seqs {
-		ctx.Write(s)
-		ctx.Write(s)
-		cxx[i] = float64(ctx.SizeReset())
+		mc.Send(s)
+		mc.Send(s)
+		cxx[i] = float64(mc.Process())
 	}
 
 	return cxx
 }
 
-func NCDMatrix(seqs *[][]byte, cx *[]float64, ctx *CompressionContext) *TriangularMatrix {
+func NCDMatrix(seqs *[][]byte, cx *[]float64, mc ManagedCompressor) *TriangularMatrix {
 	N := len(*seqs)
 	D := NewTriangularMatrix(N)
 
-	ctx.SizeReset()
+	mc.Process()
 
 	for i := 0; i < N; i += 1 {
 		ca := (*cx)[i]
 		for j := 0; j < i; j += 1 {
 			cb := (*cx)[j]
-			ctx.Write((*seqs)[i])
-			ctx.Write((*seqs)[j])
-			cab := float64(ctx.SizeReset())
+			mc.Send((*seqs)[i])
+			mc.Send((*seqs)[j])
+			cab := float64(mc.Process())
 			D.Set(i, j, NCD(ca, cb, cab))
 		}
 	}

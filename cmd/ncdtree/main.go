@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/akamensky/argparse"
+	"github.com/google/brotli/go/cbrotli"
 )
 
 func main() {
@@ -84,17 +85,21 @@ func main() {
 
 	compressorName := *argAlgo
 
-	var ctx *ncd.CompressionContext
+	var mc ncd.ManagedCompressor
 
 	switch compressorName {
 	case "Brotli":
-		ctx = ncd.NewBrotliCompressionContext()
+		opts := cbrotli.WriterOptions{
+			Quality: 11, // Compression level
+			LGWin:   0,  // Automatic window
+		}
+		mc = ncd.NewManagedCompressorBrotli(opts)
 	case "Gzip":
-		ctx = ncd.NewGzipCompressionContext()
+		mc = ncd.NewManagedCompressorGzip()
 	}
 
-	cx := ncd.CXVector(seqs, *ctx)
-	cxx := ncd.CXXVector(seqs, *ctx)
+	cx := ncd.CXVector(seqs, mc)
+	cxx := ncd.CXXVector(seqs, mc)
 
 	if *argStats {
 		fmt.Println("COMPRESSOR")
@@ -133,7 +138,7 @@ func main() {
 	}
 
 	// Create the distance matrix
-	D := ncd.NCDMatrix(seqs, &cx, ctx)
+	D := ncd.NCDMatrix(seqs, &cx, mc)
 
 	outFileMatrix, err := os.Create("ncd_matrix.txt")
 	if err != nil {
