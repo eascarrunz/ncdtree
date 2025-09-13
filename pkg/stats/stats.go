@@ -9,6 +9,7 @@ type Numeric interface {
 	~int | ~float64
 }
 
+// Computes the variance of a slice of numeric values (int or float64)
 func Variance[T Numeric](X *[]T, sample bool) float64 {
 	if len(*X) < 2 {
 		return 0.0
@@ -32,6 +33,7 @@ func Variance[T Numeric](X *[]T, sample bool) float64 {
 	return (Ex2 - math.Pow(Ex, 2)/n) / denom
 }
 
+// Computes the sum of a slice of float64 values using Kahan's compensation algorithm
 func KahanSum(X *[]float64) float64 {
 	sum := 0.0
 	c := 0.0 // Compensation
@@ -46,31 +48,22 @@ func KahanSum(X *[]float64) float64 {
 	return sum
 }
 
-func MeanFloat64(X *[]float64, sample bool) float64 {
-	Xbar := KahanSum(X)
-
-	if sample {
-		Xbar /= float64(len(*X) - 1)
-	} else {
-		Xbar /= float64(len(*X))
-	}
-
-	return Xbar
+// Computes the mean of a slice of float64 values,
+func MeanFloat64(X *[]float64) float64 {
+	return KahanSum(X) / float64(len(*X))
 }
 
-func MeanInt(X *[]int, sample bool) float64 {
+// Computes the mean of a slice of int values
+func MeanInt(X *[]int) float64 {
 	xSum := 0
 	for _, v := range *X {
 		xSum += v
 	}
 
-	if sample {
-		return float64(xSum) / float64(len(*X)-1)
-	} else {
-		return float64(xSum) / float64(len(*X))
-	}
+	return float64(xSum) / float64(len(*X))
 }
 
+// Computes the median of a slice of numeric values (int or float64)
 func Median[T Numeric](X *[]T) float64 {
 	tmp := slices.Clone(*X)
 	slices.Sort(tmp)
@@ -83,6 +76,7 @@ func Median[T Numeric](X *[]T) float64 {
 	}
 }
 
+// Returns the minimum value in a slice of int or float values
 func Minimum[T Numeric](X *[]T) T {
 	N := len(*X)
 	if N == 1 {
@@ -99,6 +93,7 @@ func Minimum[T Numeric](X *[]T) T {
 	return minX
 }
 
+// Returns the maximum value in a slice of int or float values
 func Maximum[T Numeric](X *[]T) T {
 	N := len(*X)
 	if N == 1 {
