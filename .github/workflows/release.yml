@@ -1,9 +1,9 @@
 name: Build Release Binaries
 
 on:
-  
+  workflow_dispatch:
   release:
-    types: [created]
+    types: [published]
 
 permissions:
   contents: write
@@ -11,24 +11,23 @@ permissions:
 
 jobs:
   release:
-    name: Single-target release
+    name: Matrix build
     runs-on: ubuntu-latest
-#    strategy:
-#      matrix:
-#        goos: [linux, darwin, windows]
-#        goarch: [amd64, arm64]
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
-      - name: Install libbrotli-dev
-        run: sudo apt-get update && sudo apt-get install -y libbrotli-dev && echo ls -la /usr/include/brotli
 
       - name: Build and release
         uses: wangyoucao577/go-release-action@v1.53
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          goos: linux
-          goarch: amd64
+          goos: ${{ matrix.goos }}
+          goarch: ${{ matrix.goarch }}
           project_path: |
-            ./cmd/ncdtree/            
+            ./cmd/ncdtree/
+          pre_command: |
+            apt-get update && apt-get install -y libbrotli-dev
