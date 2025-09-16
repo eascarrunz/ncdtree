@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+/*
+Returns the Newick representation of the subtree rooted in the node, omitting the final semicolon.
+*/
 func (node *Node) _newick(b *strings.Builder) {
 	if len(node.Out) > 1 {
 		b.WriteString("(")
@@ -29,7 +32,9 @@ func (node *Node) _newick(b *strings.Builder) {
 }
 
 /*
-Return the Newick representation of the subtree rooted in the node.
+Returns the Newick representation of the subtree rooted in the node.
+
+Reference for the Newick format: https://phylipweb.github.io/phylip/newicktree.html
 */
 func (node *Node) NewickString() string {
 	var b strings.Builder
@@ -40,7 +45,11 @@ func (node *Node) NewickString() string {
 }
 
 /*
-Return the Newick representation of the tree.
+Returns the Newick representation of the tree.
+
+References for the Newick format:
+  - https://phylipweb.github.io/phylip/newicktree.html
+  - https://en.wikipedia.org/wiki/Newick_format
 */
 func (tree *Tree) NewickString() string {
 	return tree.Root.NewickString()
