@@ -57,8 +57,8 @@ func (taxset *TaxonSet) Len() int {
 
 func (taxset *TaxonSet) MakeUnassembledTree() *Tree {
 	nbOuter := taxset.Len()
-	// nbNode := 2*nbOuter - 1
-	tree := MakeUnassembledTree(nbOuter + 1)
+	nbNode := 2*nbOuter - 1
+	tree := MakeUnassembledTree(nbNode)
 
 	for i := range nbOuter {
 		tree.Nodes[i].TaxonId = i
