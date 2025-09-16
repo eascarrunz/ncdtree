@@ -29,7 +29,7 @@ func (m *TriangularMatrix) Copy() *TriangularMatrix {
 }
 
 /*
-Create a new off-diagonal triangular matrix
+Creates a new off-diagonal triangular matrix
 
 Parameters:
 
@@ -50,7 +50,7 @@ func NewTriangularMatrix(n int) *TriangularMatrix {
 }
 
 /*
-Return the index of the underlying slice of the triangular matrix that corresponds to the off-diagonal position (i, j)
+Returns the index of the underlying slice of the triangular matrix that corresponds to the off-diagonal position (i, j)
 */
 func (m *TriangularMatrix) index(i int, j int) int {
 	x := max(i, j)
@@ -67,7 +67,7 @@ func (m *TriangularMatrix) index(i int, j int) int {
 }
 
 /*
-Get the value of the off-diagonal position (i, j) in the triangular matrix
+Gets the value of the off-diagonal position (i, j) in the triangular matrix
 */
 func (m *TriangularMatrix) Get(i int, j int) float64 {
 	idx := m.index(i, j)
@@ -76,7 +76,7 @@ func (m *TriangularMatrix) Get(i int, j int) float64 {
 }
 
 /*
-Set v as the value for position the off-diagonal position (i, j) in the triangular matrix
+Sets v as the value for position the off-diagonal position (i, j) in the triangular matrix
 */
 func (m *TriangularMatrix) Set(i int, j int, v float64) {
 	idx := m.index(i, j)
@@ -95,6 +95,7 @@ func (m *TriangularMatrix) Sequence(i int) iter.Seq2[int, float64] {
 	}
 }
 
+// Returns the (row, column) index of the first instance of the smallest value in the matrix
 func (m *TriangularMatrix) ArgMin() (int, int) {
 	var min_i int
 	var min_j int
