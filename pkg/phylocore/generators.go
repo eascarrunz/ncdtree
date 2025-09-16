@@ -1,16 +1,19 @@
 package phylocore
 
 /*
-Create a tree that is as balanced as possible for a given number of outer nodes.
+Create a tree that is as balanced as possible for a given number of outer nodes (greater than 1).
 
 Node IDs are assigned in PHYLIP order.
 
 # Parameters
-  - nbOuter: The number of outer nodes for the tree
+  - nbOuter: The number of outer nodes for the tree. Must be greater than 1.
 */
 func MakeBalancedTree(taxa *TaxonSet) *Tree {
 	tree := taxa.MakeUnassembledTree()
 	nbOuter := taxa.Len()
+	if nbOuter < 2 {
+		panic("cannot make a balanced tree with less than 2 taxa")
+	}
 	bifurcate(tree, tree.Root, nbOuter, nbOuter+1, 0)
 
 	return tree
@@ -59,12 +62,16 @@ Create a star tree, i.e. a tree with only one inner node (the root).
 Node IDs are assigned in PHYLIP order.
 
 # Parameters
-  - nbOuter: The number of outer nodes for the tree
+  - nbOuter: The number of outer nodes for the tree. Must be greater than 1.
 */
 func MakeStarTree(taxa *TaxonSet) *Tree {
 	tree := taxa.MakeUnassembledTree()
+	nbOuter := taxa.Len()
+	if nbOuter < 2 {
+		panic("cannot make a star tree with less than 2 taxa")
+	}
 
-	for i := range taxa.Len() {
+	for i := range nbOuter {
 		outerNode := tree.Nodes[i]
 		tree.Root.AddChild(outerNode, tree.NewBranch())
 	}

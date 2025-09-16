@@ -92,7 +92,7 @@ type Tree struct {
 }
 
 func (tree *Tree) String() string {
-	return fmt.Sprintf("Tree (%d nodes)", tree.NbNodes())
+	return fmt.Sprintf("Tree (%d nodes, %d attached)", len(tree.Nodes), tree.NbNodes())
 }
 
 /*

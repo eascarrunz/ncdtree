@@ -5,6 +5,7 @@ import (
 	"ncdtree/pkg/ncd"
 )
 
+// Update the elements of the R vector
 func updateR(D *ncd.TriangularMatrix, R *[]float64) {
 	for i, v := range D.Active {
 		(*R)[i] = 0.0
@@ -21,6 +22,7 @@ func updateR(D *ncd.TriangularMatrix, R *[]float64) {
 	}
 }
 
+// Perform the "reduction" step of the D matrix
 func updateD(D *ncd.TriangularMatrix, a int, b int, d_ca float64, d_cb float64) {
 	for k := range D.N {
 		if !D.Active[k] || k == a || k == b {
@@ -36,7 +38,7 @@ func updateD(D *ncd.TriangularMatrix, a int, b int, d_ca float64, d_cb float64) 
 	}
 }
 
-// Select the indices that minimize Q
+// Select the indices that minimize Q, returns the distance between the nodes as well
 func selectJoinTargets(D *ncd.TriangularMatrix, R *[]float64, m float64) (int, int, float64) {
 	Q_min := math.MaxFloat64
 	a := -1
@@ -69,6 +71,8 @@ func selectJoinTargets(D *ncd.TriangularMatrix, R *[]float64, m float64) (int, i
 	return a, b, d_ab
 }
 
+// Locates the remaining nodes in the last reduction of the D matrix
+// Returns the indices of the nodes and the distance between the nodes
 func selectLastTargets(D *ncd.TriangularMatrix) (int, int, float64) {
 	a := -1
 	b := -1
@@ -94,6 +98,8 @@ func selectLastTargets(D *ncd.TriangularMatrix) (int, int, float64) {
 	return a, b, d_ab
 }
 
+// Construct a tree from a distance matrix D using the Neighbour Joining algorithm of Saitou and Nei (1987)
+// Outer node labels come from the taxon set where the taxon indices match the row order in the matrix D
 func NeighbourJoining(taxset *TaxonSet, D *ncd.TriangularMatrix) *Tree {
 	nbTaxa := taxset.Len()
 	nbNode := 2*nbTaxa - 2
@@ -114,7 +120,8 @@ func NeighbourJoining(taxset *TaxonSet, D *ncd.TriangularMatrix) *Tree {
 		activeIndices[i] = true
 	}
 
-	// Vector of R_x values
+	// Vector of the sum of distances between each taxon and all the remaining nodes
+	// (notation from Studier & Keppler 1988)
 	R := make([]float64, nbTaxa)
 
 	m := float64(nbTaxa)
@@ -164,6 +171,7 @@ func NeighbourJoining(taxset *TaxonSet, D *ncd.TriangularMatrix) *Tree {
 	case node_b:
 		node_b.AddChild(node_a, branch_ab)
 	default:
+		// This should never happen
 		panic("the root was not used in the last join")
 	}
 
