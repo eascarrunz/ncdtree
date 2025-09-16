@@ -1,5 +1,10 @@
 package ncd
 
+/*
+Compute the NCD distance between two sequences of symbols based on their compressed sizes x and y, and their joint (concatenated) compressed size xy.
+
+Formula after Cilibrasi & Vitányi (2005): NCD(x, y, xy) = (xy - min(x, y)) / max(x, y)
+*/
 func NCD(x float64, y float64, xy float64) float64 {
 	if x > y {
 		return (xy - y) / x
@@ -8,11 +13,13 @@ func NCD(x float64, y float64, xy float64) float64 {
 	}
 }
 
+/*
+Creates a vector with the compressed sizes of a list of sequences.
+Vector element type is float64 for other NCD calculations.
+*/
 func CXVector(seqs *[][]byte, mc ManagedCompressor) []float64 {
 	N := len(*seqs)
 	cx := make([]float64, N)
-
-	// mc.Process()
 
 	for i, s := range *seqs {
 		mc.Send(s)
@@ -22,6 +29,10 @@ func CXVector(seqs *[][]byte, mc ManagedCompressor) []float64 {
 	return cx
 }
 
+/*
+Creates a vector with the compressed sizes of a list of sequences concatenated with themselves.
+Vector element type is float64 for consistance with CXVector.
+*/
 func CXXVector(seqs *[][]byte, mc ManagedCompressor) []float64 {
 	N := len(*seqs)
 	cxx := make([]float64, N)
@@ -37,6 +48,9 @@ func CXXVector(seqs *[][]byte, mc ManagedCompressor) []float64 {
 	return cxx
 }
 
+/*
+Creates an NCD matrix from a list of sequences, using a pre-computed vector compressed sizes
+*/
 func NCDMatrix(seqs *[][]byte, cx *[]float64, mc ManagedCompressor) *TriangularMatrix {
 	N := len(*seqs)
 	D := NewTriangularMatrix(N)
