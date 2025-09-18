@@ -12,6 +12,8 @@ permissions:
 jobs:
     build:
         runs-on: ubuntu-latest
+        env:
+            CGO_ENABLED: "1"
         strategy:
             matrix:
                 goos: [linux, darwin]
