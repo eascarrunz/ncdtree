@@ -14,7 +14,6 @@ jobs:
         runs-on: ubuntu-latest
         env:
             CGO_ENABLED: "1"
-            CGO_FLAGS: ""
         strategy:
             matrix:
                 goos: [linux, darwin]
@@ -26,6 +25,10 @@ jobs:
           uses: actions/setup-go@v6
           with:
             go-version: 1.24.3
+
+        - name: Set CGO Flags for Darwin
+          if: matrix.goos == 'darwin'
+          run: echo "CGO_CFLAGS=-arch ${{ matrix.goarch }}" >> $GITHUB_ENV
 
         - name: Brotli Setup
           run: sudo apt-get update && sudo apt-get install -y libbrotli-dev
