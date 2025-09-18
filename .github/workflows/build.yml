@@ -17,7 +17,7 @@ jobs:
             go-version: 1.24.3
 
         - name: Brotli Setup
-          run: apt-get update && apt-get install -y libbrotli-dev
+          run: sudo apt-get update && sudo apt-get install -y libbrotli-dev
 
         - name: Build
           run: sh build.sh
