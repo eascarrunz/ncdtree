@@ -1,33 +1,100 @@
-name: Build Release Binaries
+name: Release
 
 on:
-  workflow_dispatch:
-  release:
-    types: [published]
+    workflow_dispatch:
+    release:
+        types: [published]
 
 permissions:
-  contents: write
-  packages: write
+    contents: write
 
 jobs:
-  release:
-    name: Matrix build
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        goos: [linux, windows, darwin]
-        goarch: [amd64, arm64]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    build:
+        strategy:
+            matrix:
+                include:
+                  - goos: linux
+                    goarch: amd64
+                    runs-on: ubuntu-latest
+                  - goos: linux
+                    goarch: arm64
+                    runs-on: ubuntu-latest
+                  - goos: darwin
+                    goarch: amd64
+                    runs-on: macos-latest
+                  - goos: darwin
+                    goarch: arm64
+                    runs-on: macos-latest
 
-      - name: Build and release
-        uses: wangyoucao577/go-release-action@v1.53
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          goos: ${{ matrix.goos }}
-          goarch: ${{ matrix.goarch }}
-          project_path: |
-            ./cmd/ncdtree/
-          pre_command: |
-            apt-get update && apt-get install -y libbrotli-dev
+        runs-on: ${{ matrix.runs-on }}
+        env:
+            CGO_ENABLED: "1"
+            GOOS: ${{ matrix.goos }}
+            GOARCH: ${{ matrix.goarch }}
+
+        steps:
+        - uses: actions/checkout@v4
+
+        - name: Go Setup
+          uses: actions/setup-go@v6
+          with:
+            go-version: 1.24.3
+
+        - name: Install Brotli (Linux amd64)
+          if: matrix.goos == 'linux' && matrix.goarch == 'amd64'
+          run: sudo apt-get update && sudo apt-get install -y libbrotli-dev
+
+        - name: Install Brotli and cross-compile tools (Linux arm64)
+          if: matrix.goos == 'linux' && matrix.goarch == 'arm64'
+          run: |
+            sudo dpkg --add-architecture arm64
+            sudo sed -i 's/^Types: deb$/Types: deb\nArchitectures: amd64/' /etc/apt/sources.list.d/ubuntu.sources
+            sudo tee /etc/apt/sources.list.d/arm64-ports.sources << 'SOURCES'
+            Types: deb
+            URIs: http://ports.ubuntu.com/ubuntu-ports
+            Suites: noble noble-updates noble-security
+            Components: main restricted universe multiverse
+            Architectures: arm64
+            Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+            SOURCES
+            sudo apt-get update
+            sudo apt-get install -y gcc-aarch64-linux-gnu libbrotli-dev:arm64
+            echo "CC=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+            echo "PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig" >> $GITHUB_ENV
+
+        - name: Install Brotli (darwin/arm64)
+          if: matrix.goos == 'darwin' && matrix.goarch == 'arm64'
+          run: |
+            brew install brotli
+            BROTLI=$(brew --prefix brotli)
+            echo "PKG_CONFIG_PATH=${BROTLI}/lib/pkgconfig" >> $GITHUB_ENV
+            echo "CGO_CFLAGS=-I${BROTLI}/include" >> $GITHUB_ENV
+            echo "CGO_LDFLAGS=-L${BROTLI}/lib" >> $GITHUB_ENV
+
+        - name: Build Brotli for darwin/amd64 cross-compile
+          if: matrix.goos == 'darwin' && matrix.goarch == 'amd64'
+          run: |
+            git clone --depth=1 https://github.com/google/brotli.git /tmp/brotli-src
+            cmake -S /tmp/brotli-src -B /tmp/brotli-x86 \
+              -DCMAKE_OSX_ARCHITECTURES=x86_64 \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=/tmp/brotli-x86
+            cmake --build /tmp/brotli-x86 --config Release
+            cmake --install /tmp/brotli-x86
+            echo "PKG_CONFIG_PATH=/tmp/brotli-x86/lib/pkgconfig" >> $GITHUB_ENV
+            echo "CGO_CFLAGS=-arch x86_64 -I/tmp/brotli-x86/include" >> $GITHUB_ENV
+            echo "CGO_LDFLAGS=-arch x86_64 -L/tmp/brotli-x86/lib" >> $GITHUB_ENV
+
+        - name: Build ncdtree
+          run: go build -o ncdtree-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/ncdtree/
+
+        - name: Build nj
+          run: go build -o nj-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/nj/
+
+        - name: Upload release assets
+          if: github.event_name == 'release'
+          uses: softprops/action-gh-release@v2
+          with:
+            files: |
+              ncdtree-${{ matrix.goos }}-${{ matrix.goarch }}
+              nj-${{ matrix.goos }}-${{ matrix.goarch }}
