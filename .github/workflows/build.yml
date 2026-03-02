@@ -22,7 +22,7 @@ jobs:
                     runs-on: ubuntu-latest
                   - goos: darwin
                     goarch: amd64
-                    runs-on: macos-13
+                    runs-on: macos-latest
                   - goos: darwin
                     goarch: arm64
                     runs-on: macos-latest
@@ -63,11 +63,32 @@ jobs:
             echo "CC=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
             echo "PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig" >> $GITHUB_ENV
 
-        - name: Install Brotli (macOS)
-          if: matrix.goos == 'darwin'
+        - name: Install Brotli (darwin/arm64)
+          if: matrix.goos == 'darwin' && matrix.goarch == 'arm64'
           run: |
             brew install brotli
-            echo "PKG_CONFIG_PATH=$(brew --prefix brotli)/lib/pkgconfig" >> $GITHUB_ENV
+            BROTLI=$(brew --prefix brotli)
+            echo "PKG_CONFIG_PATH=${BROTLI}/lib/pkgconfig" >> $GITHUB_ENV
+            echo "CGO_CFLAGS=-I${BROTLI}/include" >> $GITHUB_ENV
+            echo "CGO_LDFLAGS=-L${BROTLI}/lib" >> $GITHUB_ENV
+
+        - name: Build Brotli for darwin/amd64 cross-compile
+          if: matrix.goos == 'darwin' && matrix.goarch == 'amd64'
+          run: |
+            git clone --depth=1 https://github.com/google/brotli.git /tmp/brotli-src
+            cmake -S /tmp/brotli-src -B /tmp/brotli-x86 \
+              -DCMAKE_OSX_ARCHITECTURES=x86_64 \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=/tmp/brotli-x86
+            cmake --build /tmp/brotli-x86 --config Release
+            cmake --install /tmp/brotli-x86
+            echo "PKG_CONFIG_PATH=/tmp/brotli-x86/lib/pkgconfig" >> $GITHUB_ENV
+            echo "CGO_CFLAGS=-arch x86_64 -I/tmp/brotli-x86/include" >> $GITHUB_ENV
+            echo "CGO_LDFLAGS=-arch x86_64 -L/tmp/brotli-x86/lib" >> $GITHUB_ENV
+
+        - name: Test
+          if: (matrix.goos == 'linux' && matrix.goarch == 'amd64') || (matrix.goos == 'darwin' && matrix.goarch == 'arm64')
+          run: go test ./...
 
         - name: Build ncdtree
           run: go build ./cmd/ncdtree/
