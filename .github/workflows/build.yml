@@ -11,13 +11,28 @@ permissions:
 
 jobs:
     build:
-        runs-on: ubuntu-latest
-        env:
-            CGO_ENABLED: "1"
         strategy:
             matrix:
-                goos: [linux, darwin]
-                goarch: [arm64, amd64]
+                include:
+                  - goos: linux
+                    goarch: amd64
+                    runs-on: ubuntu-latest
+                  - goos: linux
+                    goarch: arm64
+                    runs-on: ubuntu-latest
+                  - goos: darwin
+                    goarch: amd64
+                    runs-on: macos-13
+                  - goos: darwin
+                    goarch: arm64
+                    runs-on: macos-latest
+
+        runs-on: ${{ matrix.runs-on }}
+        env:
+            CGO_ENABLED: "1"
+            GOOS: ${{ matrix.goos }}
+            GOARCH: ${{ matrix.goarch }}
+
         steps:
         - uses: actions/checkout@v4
 
@@ -26,15 +41,36 @@ jobs:
           with:
             go-version: 1.24.3
 
-        - name: Set CGO Flags for Darwin
-          if: matrix.goos == 'darwin'
-          run: echo "CGO_CFLAGS=-arch ${{ matrix.goarch }}" >> $GITHUB_ENV
-
-        - name: Brotli Setup
+        - name: Install Brotli (Linux amd64)
+          if: matrix.goos == 'linux' && matrix.goarch == 'amd64'
           run: sudo apt-get update && sudo apt-get install -y libbrotli-dev
 
+        - name: Install Brotli and cross-compile tools (Linux arm64)
+          if: matrix.goos == 'linux' && matrix.goarch == 'arm64'
+          run: |
+            sudo dpkg --add-architecture arm64
+            sudo sed -i 's/^Types: deb$/Types: deb\nArchitectures: amd64/' /etc/apt/sources.list.d/ubuntu.sources
+            sudo tee /etc/apt/sources.list.d/arm64-ports.sources << 'SOURCES'
+            Types: deb
+            URIs: http://ports.ubuntu.com/ubuntu-ports
+            Suites: noble noble-updates noble-security
+            Components: main restricted universe multiverse
+            Architectures: arm64
+            Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+            SOURCES
+            sudo apt-get update
+            sudo apt-get install -y gcc-aarch64-linux-gnu libbrotli-dev:arm64
+            echo "CC=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+            echo "PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig" >> $GITHUB_ENV
+
+        - name: Install Brotli (macOS)
+          if: matrix.goos == 'darwin'
+          run: |
+            brew install brotli
+            echo "PKG_CONFIG_PATH=$(brew --prefix brotli)/lib/pkgconfig" >> $GITHUB_ENV
+
         - name: Build ncdtree
-          run: GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build ./cmd/ncdtree/
-          
+          run: go build ./cmd/ncdtree/
+
         - name: Build nj
-          run: GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build ./cmd/nj/
+          run: go build ./cmd/nj/
