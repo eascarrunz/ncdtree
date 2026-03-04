@@ -112,10 +112,33 @@ func (node *Node) NbDescendants() int {
 }
 
 /*
+Return the number of nodes that descend from the current node
+*/
+func (node *Node) nbOuterDescendants() int {
+	nb := 0
+	count := func(*Node) {
+		if node.IsOuter() {
+			nb += 1
+		}
+	}
+
+	node.Traverse(count, PreOrder)
+
+	return nb
+}
+
+/*
 Return the number of nodes in the tree
 */
 func (tree *Tree) NbNodes() int {
 	return tree.Root.NbDescendants()
+}
+
+/*
+Return the number of outer nodes in the tree
+*/
+func (tree *Tree) NbOuterNodes() int {
+	return tree.Root.nbOuterDescendants()
 }
 
 /*

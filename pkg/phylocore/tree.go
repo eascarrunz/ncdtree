@@ -13,6 +13,14 @@ type Node struct {
 	Out     []*Branch
 }
 
+type NodeGroup int
+
+const (
+	AnyNodes NodeGroup = iota
+	InnerNodes
+	OuterNodes
+)
+
 func (node *Node) String() string {
 	if node.Label == "" {
 		return fmt.Sprintf("Node #%d", node.Id)
@@ -91,6 +99,23 @@ type Tree struct {
 	Branches []*Branch
 }
 
+func NewEmptyTree(nbNode int) *Tree {
+	nbBranch := 0
+	if nbNode > 0 {
+		nbBranch = nbNode - 1
+	}
+	nodes := make([]*Node, 0, nbNode)
+	branches := make([]*Branch, 0, nbBranch)
+
+	tree := &Tree{
+		Root:     nil,
+		Nodes:    nodes,
+		Branches: branches,
+	}
+
+	return tree
+}
+
 func (tree *Tree) String() string {
 	return fmt.Sprintf("Tree (%d nodes, %d attached)", len(tree.Nodes), tree.NbNodes())
 }
@@ -103,7 +128,7 @@ The nodes are initialized with individual node IDs and -1 as the taxon ID (meani
 # Arguments
   - nbNode: Number of nodes to initialize
 */
-func MakeUnassembledTree(nbNode int) *Tree {
+func MakeUnassembledTreePhylip(nbNode int) *Tree {
 	nbBranch := nbNode - 1
 	nodes := make([]*Node, nbNode)
 	branches := make([]*Branch, 0, nbBranch)

@@ -103,7 +103,7 @@ func selectLastTargets(D *ncd.TriangularMatrix) (int, int, float64) {
 func NeighbourJoining(taxset *TaxonSet, D *ncd.TriangularMatrix) *Tree {
 	nbTaxa := taxset.Len()
 	nbNode := 2*nbTaxa - 2
-	tree := MakeUnassembledTree(nbNode)
+	tree := MakeUnassembledTreePhylip(nbNode)
 	tree.Root = tree.Nodes[nbTaxa]
 
 	// List that matches up nodes in the tree to the positions in the D matrix
@@ -115,7 +115,7 @@ func NeighbourJoining(taxset *TaxonSet, D *ncd.TriangularMatrix) *Tree {
 	for i := range nbTaxa {
 		node := tree.Nodes[i]
 		node.TaxonId = i
-		node.Label = taxset.GetName(i)
+		node.Label, _ = taxset.GetName(i)
 		targetNodes[i] = node
 		activeIndices[i] = true
 	}
