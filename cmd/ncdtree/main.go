@@ -12,6 +12,8 @@ import (
 	"github.com/google/brotli/go/cbrotli"
 )
 
+const inputBufSize = 64 * 1024
+
 func main() {
 	compressorList := []string{"Brotli", "Gzip"}
 
@@ -69,14 +71,14 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		if inputStat.Mode()&os.ModeNamedPipe == 0 {
+		if inputStat.Mode()&os.ModeCharDevice != 0 {
 			os.Stderr.WriteString("No input.\n")
 			os.Exit(66)
 		}
 	}
 
-	scanner := bufio.NewScanner(input)
-	taxonNames, seqs, err = fasta.ReadFasta(*scanner)
+	reader := bufio.NewReaderSize(input, inputBufSize)
+	taxonNames, seqs, err = fasta.ReadFasta(reader)
 	if err != nil {
 		panic(err)
 	}

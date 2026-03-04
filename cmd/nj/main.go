@@ -23,7 +23,10 @@ func main() {
 
 	scanner := bufio.NewScanner(input)
 
-	taxa, d := phylocore.ReadDistanceMatrix(*scanner)
+	taxa, d, err := phylocore.ReadDistanceMatrix(scanner)
+	if err != nil {
+		panic(err)
+	}
 
 	tree := phylocore.NeighbourJoining(taxa, d)
 
