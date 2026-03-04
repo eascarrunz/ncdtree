@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func ReadDistanceMatrix(scanner bufio.Scanner) (*TaxonSet, *ncd.TriangularMatrix) {
+func ReadDistanceMatrix(scanner *bufio.Scanner) (*TaxonSet, *ncd.TriangularMatrix, error) {
 	taxonNames := make([]string, 0)
 	data := make([]float64, 0)
 
@@ -26,11 +26,15 @@ func ReadDistanceMatrix(scanner bufio.Scanner) (*TaxonSet, *ncd.TriangularMatrix
 		for j := 0; j < i; j += 1 {
 			value, err := strconv.ParseFloat(fields[j+1], 64)
 			if err != nil {
-				panic(fmt.Errorf("invalid value %w", err))
+				return nil, nil, fmt.Errorf("invalid value %w", err)
 			}
 			data = append(data, value)
 		}
 		i += 1
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, nil, err
 	}
 
 	nTaxa := i
@@ -43,5 +47,5 @@ func ReadDistanceMatrix(scanner bufio.Scanner) (*TaxonSet, *ncd.TriangularMatrix
 	}
 	m := &ncd.TriangularMatrix{N: nTaxa, RawData: data, Active: active}
 
-	return taxonSet, m
+	return taxonSet, m, nil
 }
