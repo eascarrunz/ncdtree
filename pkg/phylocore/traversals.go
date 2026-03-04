@@ -51,7 +51,7 @@ func (branch *Branch) preTraverse(f func(*Branch)) {
 
 func (branch *Branch) postTraverse(f func(*Branch)) {
 	for _, childBranch := range branch.Child.Out {
-		childBranch.preTraverse(f)
+		childBranch.postTraverse(f)
 	}
 
 	f(branch)
@@ -116,8 +116,8 @@ Return the number of nodes that descend from the current node
 */
 func (node *Node) nbOuterDescendants() int {
 	nb := 0
-	count := func(*Node) {
-		if node.IsOuter() {
+	count := func(child *Node) {
+		if child.IsOuter() {
 			nb += 1
 		}
 	}

@@ -51,7 +51,7 @@ func (taxset *TaxonSet) NewTaxon(name string) int {
 
 // Get the name of a taxon by its numeric ID
 func (taxset *TaxonSet) GetName(i int) (string, bool) {
-	if i > taxset.Len() {
+	if i >= taxset.Len() {
 		return "", false
 	}
 	return taxset.Names[i], true

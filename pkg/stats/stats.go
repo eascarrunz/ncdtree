@@ -70,9 +70,9 @@ func Median[T Numeric](X *[]T) float64 {
 
 	n := len(tmp)
 	if n%2 == 0 {
-		return (float64(tmp[n/2]) + float64(tmp[(n/2)+1])) / 2.0
+		return (float64(tmp[(n/2)-1]) + float64(tmp[(n/2)+1])) / 2.0
 	} else {
-		return float64(tmp[(n+1)/2])
+		return float64(tmp[n/2])
 	}
 }
 
