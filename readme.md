@@ -57,9 +57,9 @@ COMPRESSION METRICS
 17  Delphinapterus_leucas-NC_034236.1        16386     4110            3.9868613         0.00146   
 ---------------------------------------------------------------------------------------------------
                                        Mean  16392     4147.8235294    3.953511701886    0.001305  
-                                     Median  16398     4118            3.9866213         0.00145   
+                                     Median  16398     4117            3.9849075         0.00122   
                                     Minimum  16339     4107            3.7320694         0.00091   
-                                    Maximum  16428     4378            3.9875882         0.00160
+                                    Maximum  16428     4378            3.9875882         0.00160  
 ```
 
 The second and third columns show the size and compressed size (in bytes) of the DNA sequences.
