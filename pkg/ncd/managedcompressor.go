@@ -2,8 +2,11 @@ package ncd
 
 import (
 	"compress/gzip"
+	"io"
+	"os/exec"
 
 	"github.com/google/brotli/go/cbrotli"
+	"github.com/klauspost/compress/zstd"
 )
 
 /*========================================================================
@@ -109,6 +112,91 @@ func (mc *ManagedCompressorBrotli) Process() int {
 	mc.buffer.Reset()
 
 	mc.compressor = cbrotli.NewWriter(mc.buffer, mc.opts)
+
+	return b
+}
+
+/*=======================================================================
+	zstd
+·······································································*/
+
+type ManagedCompressorZstd struct {
+	compressor *zstd.Encoder
+	buffer     *ByteCounter
+	opts       []zstd.EOption
+}
+
+func NewManagedCompressorZstd(opts []zstd.EOption) *ManagedCompressorZstd {
+	buffer := &ByteCounter{}
+	compressor, err := zstd.NewWriter(buffer, opts...)
+	if err != nil {
+		panic("could not create zstd encoder")
+	}
+	mc := &ManagedCompressorZstd{compressor: compressor, buffer: buffer, opts: opts}
+
+	return mc
+}
+
+func (mc *ManagedCompressorZstd) Send(data []byte) (int, error) {
+	return mc.compressor.Write(data)
+}
+
+func (mc *ManagedCompressorZstd) Process() int {
+	mc.compressor.Close()
+	b := mc.buffer.nBytes
+	mc.buffer.Reset()
+
+	mc.compressor.Reset(mc.buffer)
+
+	return b
+}
+
+/*=======================================================================
+	External compressor
+·······································································*/
+
+type ManagedCompressorExternal struct {
+	args      []string
+	stdin     io.WriteCloser
+	outbuffer *ByteCounter
+	cmd       *exec.Cmd
+}
+
+func NewManagedCompressorExternal(args []string) *ManagedCompressorExternal {
+	mc := &ManagedCompressorExternal{
+		args:      args,
+		outbuffer: &ByteCounter{},
+	}
+
+	mc.start()
+	return mc
+}
+
+func (mc *ManagedCompressorExternal) start() {
+	mc.cmd = exec.Command(mc.args[0], mc.args[1:]...)
+	mc.cmd.Stdout = mc.outbuffer
+	stdin, err := mc.cmd.StdinPipe()
+	if err != nil {
+		panic("could not create external compressor stdin pipe")
+	}
+	mc.stdin = stdin
+
+	if err := mc.cmd.Start(); err != nil {
+		panic("could not start external compressor")
+	}
+}
+
+func (mc *ManagedCompressorExternal) Send(data []byte) (int, error) {
+	return mc.stdin.Write(data)
+}
+
+func (mc *ManagedCompressorExternal) Process() int {
+	mc.stdin.Close()
+	mc.cmd.Wait()
+	b := mc.outbuffer.nBytes
+	mc.outbuffer.Reset()
+
+	mc.start()
 
 	return b
 }

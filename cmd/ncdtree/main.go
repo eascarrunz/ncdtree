@@ -7,15 +7,17 @@ import (
 	"ncdtree/pkg/ncd"
 	"ncdtree/pkg/phylocore"
 	"os"
+	"strings"
 
 	"github.com/akamensky/argparse"
 	"github.com/google/brotli/go/cbrotli"
+	"github.com/klauspost/compress/zstd"
 )
 
 const inputBufSize = 64 * 1024
 
 func main() {
-	compressorList := []string{"Brotli", "Gzip"}
+	compressorList := []string{"Brotli", "Gzip", "zstd"}
 
 	parser := argparse.NewParser(
 		"ncdtree",
@@ -29,6 +31,10 @@ func main() {
 		"Z", "compressor",
 		compressorList,
 		&argparse.Options{Required: false, Default: "Brotli", Help: "Compression algorithm"},
+	)
+	argZCmd := parser.String(
+		"c", "cmd",
+		&argparse.Options{Required: false, Default: "", Help: "External compressor command (overrides -Z). Must read from stdin and write compressed data to stdout, e.g. 'gzip -c'."},
 	)
 	argStats := parser.Flag(
 		"s", "stats",
@@ -98,6 +104,18 @@ func main() {
 		mc = ncd.NewManagedCompressorBrotli(opts)
 	case "Gzip":
 		mc = ncd.NewManagedCompressorGzip()
+	case "zstd":
+		opts := []zstd.EOption{
+			zstd.WithEncoderLevel(zstd.SpeedBestCompression),
+		}
+		mc = ncd.NewManagedCompressorZstd(opts)
+	}
+
+	if *argZCmd != "" {
+		zCmdArgs := strings.Fields(*argZCmd)
+		compressorName = zCmdArgs[0] + " (external compressor)"
+
+		mc = ncd.NewManagedCompressorExternal(zCmdArgs)
 	}
 
 	cx := ncd.CXVector(seqs, mc)
@@ -106,11 +124,10 @@ func main() {
 	if *argStats {
 		fmt.Println("COMPRESSOR")
 		fmt.Println("==========")
-		fmt.Println("Compressor " + compressorName + "\n")
+		fmt.Println("Name:\t" + compressorName + "\n")
 		fmt.Println("COMPRESSION METRICS")
 		fmt.Println("===================")
-		// fmt.Println("\n#\tTaxon\tSize\tCompressedSize\tCompressionRatio\tSelfNCD")
-		// fmt.Println("---------------------------------------------------------------------------------")
+
 		selfNCD := make([]float64, N)
 		for i := range N {
 			selfNCD[i] = ncd.NCD(cx[i], cx[i], cxx[i])
@@ -120,21 +137,6 @@ func main() {
 		for i, v := range *seqs {
 			seqSize[i] = len(v)
 		}
-		// var compressionRatio float64
-
-		// for i, taxonName := range *taxonNames {
-		// 	seqSize[i] = len((*seqs)[i])
-		// 	compressionRatio = cx[i] / float64(seqSize[i])
-
-		// 	fmt.Printf("%2d\t%-*s\t%d\t%.0f\t%.2g\t%.2g mit\n", i, 40, taxonName, seqSize[i], cx[i], compressionRatio, selfNCD[i])
-		// }
-
-		// slices.Sort(selfNCD) // In-place sorting
-		// if N%2 == 0 {
-		// 	selfNCDMedian = (selfNCD[N/2] + selfNCD[(N/2)+1]) / 2
-		// } else {
-		// 	selfNCDMedian = selfNCD[(N+1)/2]
-		// }
 
 		writeStatsTable(os.Stdout, taxonNames, &seqSize, &cx, &selfNCD)
 	}
