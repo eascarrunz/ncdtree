@@ -83,6 +83,31 @@ func (m *TriangularMatrix) Set(i int, j int, v float64) {
 	m.RawData[idx] = v
 }
 
+// Row is a cursor into a single row of a TriangularMatrix with the row base
+// precomputed. Set(j, v) writes to position (i, j) without recomputing the base,
+// and handles both j < i (direct lower-triangle write) and j > i (upper-triangle
+// write, which maps to the symmetric lower-triangle cell) internally.
+type Row struct {
+	i    int
+	base int // i*(i-1)/2, precomputed
+	m    *TriangularMatrix
+}
+
+// Set writes v to position (i, j) in the matrix. For j < i the base is already
+// known; for j > i it computes the symmetric position j*(j-1)/2+i.
+func (r Row) Set(j int, v float64) {
+	if j < r.i {
+		r.m.RawData[r.base+j] = v
+	} else {
+		r.m.RawData[j*(j-1)/2+r.i] = v
+	}
+}
+
+// Row returns a Row cursor for the i-th row with the base i*(i-1)/2 precomputed.
+func (m *TriangularMatrix) Row(i int) Row {
+	return Row{i: i, base: i * (i - 1) / 2, m: m}
+}
+
 func (m *TriangularMatrix) Sequence(i int) iter.Seq2[int, float64] {
 	return func(yield func(int, float64) bool) {
 		for j := range m.N {
