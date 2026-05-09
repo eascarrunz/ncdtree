@@ -55,8 +55,6 @@ func NCDMatrix(seqs *[][]byte, cx *[]float64, mc ManagedCompressor) *TriangularM
 	N := len(*seqs)
 	D := NewTriangularMatrix(N)
 
-	mc.Process()
-
 	for i := 0; i < N; i += 1 {
 		ca := (*cx)[i]
 		for j := 0; j < i; j += 1 {
