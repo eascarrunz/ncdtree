@@ -9,9 +9,9 @@ import (
 	"strings"
 )
 
-func findStringMaxWidth(list *[]string) int {
+func findStringMaxWidth(list []string) int {
 	var w, l int
-	for _, s := range *list {
+	for _, s := range list {
 		l = len(s)
 		if l > w {
 			w = l
@@ -21,9 +21,9 @@ func findStringMaxWidth(list *[]string) int {
 	return w
 }
 
-func findIntMaxWidth(list *[]int) int {
+func findIntMaxWidth(list []int) int {
 	var w, l int
-	for _, v := range *list {
+	for _, v := range list {
 		l = len(strconv.Itoa(v))
 		if l > w {
 			w = l
@@ -73,14 +73,14 @@ func padRight(s string, width int) string {
 	return s + strings.Repeat(" ", width-len(s))
 }
 
-func writeStatsTable(w io.Writer, taxonNames *[]string, seqLen *[]int, cx *[]float64, selfNCD *[]float64) {
+func writeStatsTable(w io.Writer, taxonNames []string, seqLen []int, cx []float64, selfNCD []float64) {
 	colTitles := [6]string{"#", "Taxon", "Size", "CompressedSize", "CompressionRatio", "SelfNCD"}
 	colWidths := make(map[string]int, 6)
-	n := len(*taxonNames)
+	n := len(taxonNames)
 
-	compressionRatios := make([]float64, len(*seqLen))
-	for i, l := range *seqLen {
-		compressionRatios[i] = float64(l) / (*cx)[i]
+	compressionRatios := make([]float64, len(seqLen))
+	for i, l := range seqLen {
+		compressionRatios[i] = float64(l) / (cx)[i]
 	}
 
 	// Make sure that the columns will be at least as wide as their titles
@@ -119,16 +119,16 @@ func writeStatsTable(w io.Writer, taxonNames *[]string, seqLen *[]int, cx *[]flo
 	fmt.Fprintln(w, strings.Repeat("—", tableWidth))
 
 	// Taxon data
-	for i, taxon := range *taxonNames {
+	for i, taxon := range taxonNames {
 		fmt.Fprintf(w, "%-*.d", colWidths["#"], i+1)
 		fmt.Fprint(w, gapString)
 		fmt.Fprintf(w, "%-*s", colWidths["Taxon"]+fieldGapSize, taxon)
-		fmt.Fprintf(w, "%-*d", colWidths["Size"]+fieldGapSize, (*seqLen)[i])
-		fmt.Fprintf(w, "%-*g", colWidths["CompressedSize"]+fieldGapSize, (*cx)[i])
+		fmt.Fprintf(w, "%-*d", colWidths["Size"]+fieldGapSize, seqLen[i])
+		fmt.Fprintf(w, "%-*g", colWidths["CompressedSize"]+fieldGapSize, cx[i])
 		// fmt.Fprintf(w, "%-.*g%s", colWidths["CompressionRatio"]-1, float64((*seqLen)[i])/(*cx)[i], gapString)
 		s := padRight(fmtFloatField(compressionRatios[i], 8, colWidths["CompressionRatio"]), colWidths["CompressionRatio"])
 		fmt.Fprintf(w, "%s%s", s, gapString)
-		s = padRight(fmtFloatField((*selfNCD)[i], 6, colWidths["SelfNCD"]), colWidths["SelfNCD"])
+		s = padRight(fmtFloatField((selfNCD)[i], 6, colWidths["SelfNCD"]), colWidths["SelfNCD"])
 		// fmt.Fprintf(w, "%-*.g", colWidths["SelfNCD"], (*selfNCD)[i])
 		fmt.Fprintf(w, "%s", s)
 		fmt.Fprintln(w)
@@ -150,7 +150,7 @@ func writeStatsTable(w io.Writer, taxonNames *[]string, seqLen *[]int, cx *[]flo
 	colStat = stats.MeanFloat64(cx)
 	s = padRight(fmtFloatField(colStat, colWidths["CompressedSize"]-3, colWidths["CompressedSize"]), colWidths["CompressedSize"])
 	fmt.Fprintf(w, "%s%s", s, gapString)
-	colStat = stats.MeanFloat64(&compressionRatios)
+	colStat = stats.MeanFloat64(compressionRatios)
 	s = padRight(fmtFloatField(colStat, colWidths["CompressionRatio"]-3, colWidths["CompressionRatio"]), colWidths["CompressionRatio"])
 	fmt.Fprintf(w, "%s%s", s, gapString)
 	colStat = stats.MeanFloat64(selfNCD)
@@ -164,7 +164,7 @@ func writeStatsTable(w io.Writer, taxonNames *[]string, seqLen *[]int, cx *[]flo
 	fmt.Fprintf(w, "%-*g%s", colWidths["Size"], colStat, gapString)
 	colStat = stats.Median(cx)
 	fmt.Fprintf(w, "%-*g%s", colWidths["CompressedSize"], colStat, gapString)
-	colStat = stats.Median(&compressionRatios)
+	colStat = stats.Median(compressionRatios)
 	s = padRight(fmtFloatField(colStat, 8, colWidths["CompressionRatio"]), colWidths["CompressionRatio"])
 	fmt.Fprintf(w, "%s%s", s, gapString)
 	colStat = stats.Median(selfNCD)
@@ -178,7 +178,7 @@ func writeStatsTable(w io.Writer, taxonNames *[]string, seqLen *[]int, cx *[]flo
 	fmt.Fprintf(w, "%-*g%s", colWidths["Size"], colStat, gapString)
 	colStat = stats.Minimum(cx)
 	fmt.Fprintf(w, "%-*g%s", colWidths["CompressedSize"], colStat, gapString)
-	colStat = stats.Minimum(&compressionRatios)
+	colStat = stats.Minimum(compressionRatios)
 	s = padRight(fmtFloatField(colStat, 8, colWidths["CompressionRatio"]), colWidths["CompressionRatio"])
 	fmt.Fprintf(w, "%s%s", s, gapString)
 	colStat = stats.Minimum(selfNCD)
@@ -192,7 +192,7 @@ func writeStatsTable(w io.Writer, taxonNames *[]string, seqLen *[]int, cx *[]flo
 	fmt.Fprintf(w, "%-*g%s", colWidths["Size"], colStat, gapString)
 	colStat = stats.Maximum(cx)
 	fmt.Fprintf(w, "%-*g%s", colWidths["CompressedSize"], colStat, gapString)
-	colStat = stats.Maximum(&compressionRatios)
+	colStat = stats.Maximum(compressionRatios)
 	s = padRight(fmtFloatField(colStat, 8, colWidths["CompressionRatio"]), colWidths["CompressionRatio"])
 	fmt.Fprintf(w, "%s%s", s, gapString)
 	colStat = stats.Maximum(selfNCD)

@@ -3,18 +3,37 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"math/bits"
 	"ncdtree/pkg/fasta"
 	"ncdtree/pkg/ncd"
 	"ncdtree/pkg/phylocore"
 	"os"
+	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/akamensky/argparse"
-	"github.com/google/brotli/go/cbrotli"
-	"github.com/klauspost/compress/zstd"
 )
 
+func nextPowerOfTwo(n int) int {
+	if n <= 1 {
+		return 1
+	}
+	// bits.Len(uint(n-1)) gives the exponent needed.
+	return 1 << bits.Len(uint(n-1))
+}
+
 const inputBufSize = 64 * 1024
+
+func setupThreads(t int) {
+	tMax := runtime.NumCPU()
+
+	if t > tMax {
+		fmt.Fprintf(os.Stderr, "Requested %d threads, but only %d threads are available", t, tMax)
+	}
+
+	runtime.GOMAXPROCS(t)
+}
 
 func main() {
 	compressorList := []string{"Brotli", "Gzip", "zstd"}
@@ -34,16 +53,29 @@ func main() {
 	)
 	argZCmd := parser.String(
 		"c", "cmd",
-		&argparse.Options{Required: false, Default: "", Help: "External compressor command (overrides -Z). Must read from stdin and write compressed data to stdout, e.g. 'gzip -c'."},
+		&argparse.Options{Required: false, Default: "", Help: "External compressor command (overrides -Z). Must read from stdin and write compressed data to stdout, e.g. 'gzip -c'"},
 	)
 	argStats := parser.Flag(
 		"s", "stats",
 		&argparse.Options{Required: false, Help: "Print statistics"},
 	)
-	// argTag := parser.String(
-	// 	"t", "tag",
-	// 	&argparse.Options{Required: false, Default: "", Help: "Tag for names of output files"},
-	// )
+	argThreads := parser.Int(
+		"t", "threads",
+		&argparse.Options{
+			Required: false,
+			Validate: func(args []string) error {
+				t, err := strconv.Atoi(args[0])
+				if err != nil {
+					return err
+				}
+				if t < 1 {
+					return fmt.Errorf("Invalid threads value: %d. Must be greater than 1", t)
+				}
+				return nil
+			},
+			Default: runtime.GOMAXPROCS(-1),
+			Help:    "Number of threads to use for parallel compression. The default value is auto-selected by the Go runtime, but might not be optimal for all workloads"},
+	)
 	argNoTree := parser.Flag(
 		"", "notree",
 		&argparse.Options{Required: false, Help: "Do not estimate a tree. Only write out distance matrix."},
@@ -53,8 +85,8 @@ func main() {
 
 	var input *os.File
 	var err error
-	var taxonNames *[]string
-	var seqs *[][]byte
+	var taxonNames []string
+	var seqs [][]byte
 	var inputStat os.FileInfo
 
 	if len(*argInfile) > 0 {
@@ -89,42 +121,54 @@ func main() {
 		panic(err)
 	}
 
-	N := len(*taxonNames)
+	setupThreads(*argThreads)
+
+	N := len(taxonNames)
 
 	compressorName := *argAlgo
 
-	var mc ncd.ManagedCompressor
+	var mcFactory ncd.ManagedCompressorFactory
+
+	maxSeqLength := 0
+
+	for _, seq := range seqs {
+		l := len(seq)
+		if l > maxSeqLength {
+			maxSeqLength = l
+		}
+	}
+
+	targetWindowSize := nextPowerOfTwo(maxSeqLength * 2)
+	windowSize, err := ncd.ComputeCompressorWindowSize(compressorName, targetWindowSize)
+	if err != nil {
+		panic(err)
+	}
 
 	switch compressorName {
 	case "Brotli":
-		opts := cbrotli.WriterOptions{
-			Quality: 11, // Compression level
-			LGWin:   0,  // Automatic window
-		}
-		mc = ncd.NewManagedCompressorBrotli(opts)
+		mcFactory = ncd.NewManagedCompressorBrotliFactory(windowSize)
 	case "Gzip":
-		mc = ncd.NewManagedCompressorGzip()
+		mcFactory = ncd.NewManagedCompressorGzipFactory()
 	case "zstd":
-		opts := []zstd.EOption{
-			zstd.WithEncoderLevel(zstd.SpeedBestCompression),
-		}
-		mc = ncd.NewManagedCompressorZstd(opts)
+		mcFactory = ncd.NewManagedCompressorZstdFactory(windowSize)
 	}
 
 	if *argZCmd != "" {
 		zCmdArgs := strings.Fields(*argZCmd)
 		compressorName = zCmdArgs[0] + " (external compressor)"
 
-		mc = ncd.NewManagedCompressorExternal(zCmdArgs)
+		mcFactory = ncd.NewManagedCompressorExternalFactory(zCmdArgs)
 	}
 
-	cx := ncd.CXVector(seqs, mc)
-	cxx := ncd.CXXVector(seqs, mc)
+	cx := ncd.CXVector(seqs, mcFactory)
+	cxx := ncd.CXXVector(seqs, mcFactory)
 
 	if *argStats {
 		fmt.Println("COMPRESSOR")
 		fmt.Println("==========")
-		fmt.Println("Name:\t" + compressorName + "\n")
+		fmt.Println("Name:\t" + compressorName)
+		fmt.Printf("Window Size:\t%d\n", windowSize)
+		fmt.Printf("Required Window Size:\t%d\n\n", targetWindowSize)
 		fmt.Println("COMPRESSION METRICS")
 		fmt.Println("===================")
 
@@ -133,16 +177,16 @@ func main() {
 			selfNCD[i] = ncd.NCD(cx[i], cx[i], cxx[i])
 		}
 
-		seqSize := make([]int, len(*seqs))
-		for i, v := range *seqs {
+		seqSize := make([]int, len(seqs))
+		for i, v := range seqs {
 			seqSize[i] = len(v)
 		}
 
-		writeStatsTable(os.Stdout, taxonNames, &seqSize, &cx, &selfNCD)
+		writeStatsTable(os.Stdout, taxonNames, seqSize, cx, selfNCD)
 	}
 
 	// Create the distance matrix
-	D := ncd.NCDMatrix(seqs, &cx, mc)
+	D := ncd.NCDMatrix(seqs, cx, mcFactory)
 
 	outFileMatrix, err := os.Create("ncd_matrix.txt")
 	if err != nil {
@@ -152,7 +196,7 @@ func main() {
 	ncd.WriteLabelledTriangularMatrix(outFileMatrix, taxonNames, D, 9)
 
 	if !*argNoTree {
-		taxset, err := phylocore.NewTaxonSet(*taxonNames)
+		taxset, err := phylocore.NewTaxonSet(taxonNames)
 		if err != nil {
 			panic(err)
 		}

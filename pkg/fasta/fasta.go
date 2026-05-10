@@ -10,7 +10,7 @@ import (
 
 // The id is the string after '>' up to the first whitespace.
 // Sequences are concatenated with newlines removed.
-func ReadFasta(reader *bufio.Reader) (*[]string, *[][]byte, error) {
+func ReadFasta(reader *bufio.Reader) ([]string, [][]byte, error) {
 	nameList := make([]string, 0)
 	fastaStrings := make([][]byte, 0)
 	nameSet := make(map[string]int) // Set for checking duplicates of identifiers, with dummy int values
@@ -64,5 +64,5 @@ func ReadFasta(reader *bufio.Reader) (*[]string, *[][]byte, error) {
 		return nil, nil, err
 	}
 
-	return &nameList, &fastaStrings, nil
+	return nameList, fastaStrings, nil
 }

@@ -42,11 +42,11 @@ func TestNCD_CXVector_CXXVector_NCDMatrix(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		seqs := &tt.seqs
-		mc := &fakeCompressor{}
+		seqs := tt.seqs
+		mcFactory := func() ManagedCompressor { return &fakeCompressor{} }
 
 		// Test CXVector
-		cx := CXVector(seqs, mc)
+		cx := CXVector(seqs, mcFactory)
 		if len(cx) != len(tt.seqs) {
 			t.Errorf("%s: CXVector len = %d, want %d", tt.name, len(cx), len(tt.seqs))
 		}
@@ -57,8 +57,7 @@ func TestNCD_CXVector_CXXVector_NCDMatrix(t *testing.T) {
 		}
 
 		// Test CXXVector
-		mc = &fakeCompressor{}
-		cxx := CXXVector(seqs, mc)
+		cxx := CXXVector(seqs, mcFactory)
 		if len(cxx) != len(tt.seqs) {
 			t.Errorf("%s: CXXVector len = %d, want %d", tt.name, len(cxx), len(tt.seqs))
 		}
@@ -69,8 +68,7 @@ func TestNCD_CXVector_CXXVector_NCDMatrix(t *testing.T) {
 		}
 
 		// Test NCDMatrix
-		mc = &fakeCompressor{}
-		D := NCDMatrix(seqs, &cx, mc)
+		D := NCDMatrix(seqs, cx, mcFactory)
 		if D.N != len(tt.seqs) {
 			t.Errorf("%s: NCDMatrix N = %d, want %d", tt.name, D.N, len(tt.seqs))
 		}
